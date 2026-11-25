@@ -10,15 +10,19 @@ export const LINE =
 // an invalid entry rather than ship a file the judge never sees. The
 // clause must also be exactly one sentence (a single terminal period,
 // no other sentence terminator) with no leading/trailing whitespace.
-const terminators = LINE.match(/[.!?]/g) ?? [];
-if (
-  LINE.length < 1 ||
-  LINE.length > 200 ||
-  LINE.includes("\n") ||
-  LINE !== LINE.trim() ||
-  terminators.length !== 1 ||
-  !LINE.endsWith(".")
-) {
+export function isValidEntry(line: string): boolean {
+  const terminators = line.match(/[.!?]/g) ?? [];
+  return (
+    line.length >= 1 &&
+    line.length <= 200 &&
+    !line.includes("\n") &&
+    line === line.trim() &&
+    terminators.length === 1 &&
+    line.endsWith(".")
+  );
+}
+
+if (!isValidEntry(LINE)) {
   console.error(`invalid entry: ${LINE.length} chars`);
   process.exit(1);
 }

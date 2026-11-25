@@ -1,10 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { execFileSync, spawnSync } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { LINE } from "./main.ts";
+import { execFileSync } from "node:child_process";
+import { readFileSync } from "node:fs";
+import { isValidEntry, LINE } from "./main.ts";
 
 test("entry is exactly one absurd ToS clause, one sentence, 1..200 chars", () => {
   assert.equal(LINE.split("\n").length, 1, "must be exactly one line");
@@ -27,22 +25,13 @@ test("two identical runs write the same line to /output/entry.txt", () => {
   assert.ok(first.length <= 200, `entry.txt is ${first.length} chars`);
 });
 
-test("negative: an over-long line is refused, nothing is written", () => {
-  const dir = mkdtempSync(join(tmpdir(), "absurd-neg-"));
-  try {
-    const src = readFileSync(join(import.meta.dirname, "main.ts"), "utf8");
-    const start = src.indexOf('export const LINE =');
-    const openQuote = src.indexOf('"', start);
-    const closeQuote = src.indexOf('";', openQuote + 1);
-    const bad = "x".repeat(200) + ".";
-    const patched =
-      src.slice(0, openQuote) + JSON.stringify(bad) + src.slice(closeQuote + 1);
-    const patchedPath = join(dir, "main-bad.ts");
-    writeFileSync(patchedPath, patched);
-    const run = spawnSync("node", [patchedPath], { encoding: "utf8" });
-    assert.notEqual(run.status, 0, "over-long entry must exit non-zero");
-    assert.match(run.stderr, /invalid entry/, "must report the invalid entry");
-  } finally {
-    rmSync(dir, { recursive: true, force: true });
-  }
+test("negative: the exported validator refuses bad lines", () => {
+  assert.equal(isValidEntry("x".repeat(200) + "."), false, "201 chars must be refused");
+  assert.equal(isValidEntry("Two sentences here. And another one."), false, "two sentences must be refused");
+  assert.equal(isValidEntry("No terminator at all"), false, "missing terminator must be refused");
+  assert.equal(isValidEntry("   "), false, "whitespace-only must be refused");
+  assert.equal(isValidEntry(""), false, "empty must be refused");
+  assert.equal(isValidEntry(LINE + " "), false, "trailing whitespace must be refused");
+  assert.equal(isValidEntry("A".repeat(199) + "."), true, "exactly 200 chars, one sentence, must pass");
+  assert.equal(isValidEntry(LINE), true, "the real entry must pass");
 });
