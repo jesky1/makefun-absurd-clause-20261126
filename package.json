@@ -1,0 +1,1 @@
+{"description":"One absurd terms-of-service clause, 174 characters, for make.fun","license":"MIT","name":"makefun-absurd-clause-20261126","private":true,"scripts":{"start":"node main.ts","test":"node --test main.test.ts"},"type":"module","version":"1.0.0"}
